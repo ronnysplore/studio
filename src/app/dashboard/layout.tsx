@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import {
   LayoutDashboard,
   LogOut,
@@ -32,25 +33,47 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { WardrobeProvider } from '@/contexts/wardrobe-context';
 
 function UserMenu() {
+    const { data: session, status } = useSession();
+    
+    // Debug: log session data
+    console.log('Session:', session);
+    console.log('User image:', session?.user?.image);
+    
+    if (status === 'loading') {
+        return (
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                    <AvatarFallback>...</AvatarFallback>
+                </Avatar>
+            </Button>
+        );
+    }
+    
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={PlaceHolderImages.find(p => p.id === 'user-face')?.imageUrl} alt="User" data-ai-hint="person face" />
-                        <AvatarFallback>U</AvatarFallback>
+                        <AvatarImage 
+                            src={session?.user?.image || undefined} 
+                            alt={session?.user?.name || 'User'}
+                            referrerPolicy="no-referrer"
+                        />
+                        <AvatarFallback className="bg-primary text-white">
+                            {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
                     </Avatar>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">User</p>
+                        <p className="text-sm font-medium leading-none">{session?.user?.name || 'User'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                            user@example.com
+                            {session?.user?.email || 'user@example.com'}
                         </p>
                     </div>
                 </DropdownMenuLabel>
@@ -60,11 +83,9 @@ function UserMenu() {
                     <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                    </Link>
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -77,48 +98,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <div className="dark:bg-background">
-        <Sidebar>
-          <SidebarHeader>
-            <div className="text-foreground">
-              <Logo />
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive('/dashboard')} tooltip="Dashboard">
-                  <Link href="/dashboard">
-                    <LayoutDashboard />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarContent>
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Logout">
-                  <Link href="/">
-                    <LogOut />
-                    <span>Logout</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-          <header className="flex items-center justify-between p-4 border-b bg-card">
-            <SidebarTrigger />
-            <UserMenu />
-          </header>
-          <main className="p-4 md:p-6 bg-background/80 min-h-[calc(100dvh-65px)]">
-            {children}
-          </main>
-        </SidebarInset>
-      </div>
+      <Sidebar>
+        <SidebarHeader className="border-b">
+          <div className="text-foreground p-2">
+            <Logo />
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive('/dashboard')} tooltip="Dashboard">
+                <Link href="/dashboard">
+                  <LayoutDashboard />
+                  <span>Dashboard</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter className="border-t">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Logout">
+                <Link href="/">
+                  <LogOut />
+                  <span>Logout</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset className="flex flex-col">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 shadow-sm">
+          <SidebarTrigger className="hover:bg-accent" />
+          <UserMenu />
+        </header>
+        <main className="flex-1 p-6 md:p-8 lg:p-10 bg-gradient-to-br from-background to-muted/20 overflow-auto">
+          <div className="max-w-7xl mx-auto">
+            <WardrobeProvider>
+              {children}
+            </WardrobeProvider>
+          </div>
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

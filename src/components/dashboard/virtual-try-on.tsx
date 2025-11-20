@@ -12,8 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Loader2, Wand2 } from "lucide-react";
+import { Loader2, Wand2, Upload } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -22,91 +21,222 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "../ui/skeleton";
+import { useWardrobe } from "@/contexts/wardrobe-context";
 
 export default function VirtualTryOn() {
   const [loading, setLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const { userPhotos, wardrobeItems, addUserPhotos, addWardrobeItems } = useWardrobe();
   const { toast } = useToast();
 
-  const userPhotos = PlaceHolderImages.filter(p => p.id.startsWith('user-'));
-  const wardrobeItems = PlaceHolderImages.filter(p => p.id.startsWith('wardrobe-'));
-
-  const [selectedUserPhoto, setSelectedUserPhoto] = useState(userPhotos[0].imageUrl);
-  const [selectedWardrobeItem, setSelectedWardrobeItem] = useState(wardrobeItems[0].imageUrl);
+  const [selectedUserPhoto, setSelectedUserPhoto] = useState<string>("");
+  const [selectedWardrobeItem, setSelectedWardrobeItem] = useState<string>("");
 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedUserPhoto || !selectedWardrobeItem) {
+      toast({
+        variant: "destructive",
+        title: "Missing Images",
+        description: "Please select both a photo and a wardrobe item.",
+      });
+      return;
+    }
+
     setLoading(true);
     setResultImage(null);
-    const result = await getVirtualTryOn({});
-    if ("error" in result) {
+
+    try {
+      // Find the selected images to get their dataUri
+      const userPhoto = userPhotos.find(p => p.url === selectedUserPhoto);
+      const wardrobeItem = wardrobeItems.find(w => w.url === selectedWardrobeItem);
+
+      if (!userPhoto || !wardrobeItem) {
+        throw new Error("Selected images not found");
+      }
+
+      const result = await getVirtualTryOn({
+        userPhotoDataUri: userPhoto.dataUri,
+        outfitImageDataUri: wardrobeItem.dataUri,
+      });
+
+      if ("error" in result) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
+      } else {
+        setResultImage(result.tryOnImageDataUri);
+        
+        // TODO: Save to Drive when network issues are resolved
+        toast({
+          title: "Success!",
+          description: "Try-on generated successfully",
+        });
+        
+        /* Temporarily disabled - Drive save
+        try {
+          await fetch("/api/save-outfit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageDataUri: result.tryOnImageDataUri,
+              fileName: `try-on-${Date.now()}.png`,
+            }),
+          });
+          
+          toast({
+            title: "Success!",
+            description: "Try-on generated and saved to Google Drive",
+          });
+        } catch (saveError) {
+          console.error("Failed to save to Drive:", saveError);
+          toast({
+            title: "Generated!",
+            description: "Try-on generated (save to Drive failed)",
+          });
+        }
+        */
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: result.error,
+        description: "Failed to generate try-on. Please try again.",
       });
-    } else {
-      setResultImage(result.tryOnImageDataUri);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Virtual Try-On</CardTitle>
-        <CardDescription>
-          Select your photo and a clothing item to see how it looks on you.
-        </CardDescription>
+    <Card className="border-2 hover:border-primary/50 transition-all shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10 border-b">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary rounded-lg">
+            <Wand2 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl">Virtual Try-On</CardTitle>
+            <CardDescription className="text-base mt-1">
+              See how clothing looks on you with AI-powered visualization
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <CardContent className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="font-medium">Your Photo</label>
-              <Select defaultValue={selectedUserPhoto} onValueChange={setSelectedUserPhoto}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your photo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userPhotos.map(photo => (
-                    <SelectItem key={photo.id} value={photo.imageUrl}>{photo.description}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-               <div className="mt-2 rounded-lg border p-2 bg-muted/30">
-                <Image src={selectedUserPhoto} alt="Selected user" width={100} height={100} className="rounded-md object-cover" />
-              </div>
-            </div>
-            <div>
-              <label className="font-medium">Wardrobe Item</label>
-              <Select defaultValue={selectedWardrobeItem} onValueChange={setSelectedWardrobeItem}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a wardrobe item" />
-                </SelectTrigger>
-                <SelectContent>
-                  {wardrobeItems.map(item => (
-                    <SelectItem key={item.id} value={item.imageUrl}>{item.description}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="mt-2 rounded-lg border p-2 bg-muted/30">
-                <Image src={selectedWardrobeItem} alt="Selected item" width={100} height={100} className="rounded-md object-cover" />
-              </div>
-            </div>
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <div className="space-y-3">
+              <label className="font-semibold text-lg flex items-center gap-2">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm">1</span>
+                Your Photo
+              </label>
+              {userPhotos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-3">Upload your photo first</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('user-photo-upload')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Photo
+                  </Button>
+                  <input
+                    id="user-photo-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => e.target.files && addUserPhotos(e.target.files)}
+                  />
+                </div>
               ) : (
-                <Wand2 className="mr-2 h-4 w-4" />
+                <>
+                  <Select value={selectedUserPhoto} onValueChange={setSelectedUserPhoto}>
+                    <SelectTrigger className="h-12 border-2 hover:border-primary/50 transition-colors">
+                      <SelectValue placeholder="Select your photo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userPhotos.map(photo => (
+                        <SelectItem key={photo.id} value={photo.url}>{photo.fileName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedUserPhoto && (
+                    <div className="rounded-xl border-2 border-dashed border-primary/30 p-3 bg-gradient-to-br from-primary/5 to-transparent hover:border-primary/50 transition-colors">
+                      <Image src={selectedUserPhoto} alt="Selected user" width={120} height={120} className="rounded-lg object-cover mx-auto shadow-md" />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="space-y-3">
+              <label className="font-semibold text-lg flex items-center gap-2">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-accent text-accent-foreground text-sm">2</span>
+                Wardrobe Item
+              </label>
+              {wardrobeItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-3">Upload a wardrobe item</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('wardrobe-upload')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Item
+                  </Button>
+                  <input
+                    id="wardrobe-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => e.target.files && addWardrobeItems(e.target.files)}
+                  />
+                </div>
+              ) : (
+                <>
+                  <Select value={selectedWardrobeItem} onValueChange={setSelectedWardrobeItem}>
+                    <SelectTrigger className="h-12 border-2 hover:border-accent/50 transition-colors">
+                      <SelectValue placeholder="Select a wardrobe item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wardrobeItems.map(item => (
+                        <SelectItem key={item.id} value={item.url}>{item.fileName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedWardrobeItem && (
+                    <div className="rounded-xl border-2 border-dashed border-accent/30 p-3 bg-gradient-to-br from-accent/5 to-transparent hover:border-accent/50 transition-colors">
+                      <Image src={selectedWardrobeItem} alt="Selected item" width={120} height={120} className="rounded-lg object-cover mx-auto shadow-md" />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <Button type="submit" disabled={loading || !selectedUserPhoto || !selectedWardrobeItem} className="w-full h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/30 hover:shadow-xl transition-all disabled:opacity-50">
+              {loading ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <Wand2 className="mr-2 h-5 w-5" />
               )}
               Generate Try-On
             </Button>
           </form>
-          <div className="flex flex-col items-center justify-center bg-muted rounded-lg p-4">
-            <h3 className="font-semibold mb-4">Result</h3>
-            <div className="relative w-full max-w-[300px] aspect-[3/4] rounded-lg border-2 border-dashed flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl p-6 border-2 border-dashed border-primary/20">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-r from-primary to-accent text-white text-sm">3</span>
+              <h3 className="font-semibold text-lg">Result</h3>
+            </div>
+            <div className="relative w-full max-w-[350px] aspect-[3/4] rounded-xl border-2 border-dashed border-primary/30 flex items-center justify-center bg-card overflow-hidden shadow-lg">
               {loading ? (
                 <Skeleton className="w-full h-full" />
               ) : resultImage ? (
@@ -114,12 +244,15 @@ export default function VirtualTryOn() {
                   src={resultImage}
                   alt="Virtual try-on result"
                   fill
-                  className="object-cover rounded-md"
+                  className="object-cover"
                 />
               ) : (
-                <div className="text-center text-muted-foreground p-4">
-                  <Wand2 className="mx-auto h-12 w-12" />
-                  <p className="mt-2">Your generated image will appear here.</p>
+                <div className="text-center text-muted-foreground p-6">
+                  <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto mb-4">
+                    <Wand2 className="h-12 w-12 text-primary" />
+                  </div>
+                  <p className="text-base font-medium">Your generated image will appear here</p>
+                  <p className="text-sm mt-2 opacity-75">Select your photo and an item, then click Generate</p>
                 </div>
               )}
             </div>

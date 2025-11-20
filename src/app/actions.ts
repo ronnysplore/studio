@@ -45,16 +45,15 @@ export async function getOutfitRecommendations(
 }
 
 export async function getVirtualTryOn(
-  input: Omit<GenerateVirtualTryOnImagesInput, 'userPhotoDataUri' | 'outfitImageDataUri'>
+  input: GenerateVirtualTryOnImagesInput
 ): Promise<GenerateVirtualTryOnImagesOutput | { error: string }> {
-   try {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    const mockOutput: GenerateVirtualTryOnImagesOutput = {
-      tryOnImageDataUri: 'https://picsum.photos/seed/tryon1/400/600'
-    };
-    return mockOutput;
+  try {
+    const { generateVirtualTryOnImages } = await import('@/ai/flows/generate-virtual-try-on-images');
+    const result = await generateVirtualTryOnImages(input);
+    return result;
   } catch (e) {
-    return { error: 'Failed to generate virtual try-on.' };
+    console.error('Virtual try-on error:', e);
+    return { error: 'Failed to generate virtual try-on. Please try again.' };
   }
 }
 
