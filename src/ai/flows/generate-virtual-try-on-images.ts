@@ -44,60 +44,33 @@ const generateVirtualTryOnImagesFlow = ai.defineFlow(
     outputSchema: GenerateVirtualTryOnImagesOutputSchema,
   },
   async input => {
-    // Extract content type from data URI
-    const getContentType = (dataUri: string): string => {
-      const match = dataUri.match(/^data:([^;]+);/);
-      return match ? match[1] : 'image/jpeg';
-    };
-
-    const userPhotoContentType = getContentType(input.userPhotoDataUri);
-    const outfitContentType = getContentType(input.outfitImageDataUri);
-
-    // Use Imagen 3 for virtual try-on image generation
+    // Use gemini-2.5-flash-image-preview (nano-banana) for virtual try-on image generation
     const result = await ai.generate({
-      model: 'googleai/imagen-3.0-fast-generate-001',
+      model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {
-          text: `You are a professional virtual fashion try-on AI. Your task is to generate a photorealistic image of a person wearing specific clothing.
+          text: `You are a professional virtual fashion try-on AI. Your task is to generate a photorealistic image of the person from the first image wearing the clothing from the second image.
 
 CRITICAL INSTRUCTIONS:
-- Generate ONLY an image of the person wearing the clothing
-- DO NOT generate abstract images, landscapes, or unrelated content
-- The output MUST show the person from the first image wearing the clothing from the second image
-- Preserve the person's facial features, body proportions, and pose exactly
-- Apply the clothing item naturally with realistic fit, wrinkles, and fabric behavior
-- Match the original photo's lighting, background, and photography style
-- Ensure seamless integration between the person and the clothing`,
+- Generate ONLY an image of the person wearing the clothing.
+- DO NOT generate abstract images, landscapes, or unrelated content.
+- The output MUST show the person from the first image wearing the clothing from the second image.
+- Preserve the person's facial features, body proportions, and pose exactly.
+- Apply the clothing item naturally with realistic fit, wrinkles, and fabric behavior.
+- Match the original photo's lighting, background, and photography style.
+- Ensure seamless integration between the person and the clothing.`,
         },
-        {
-          media: {
-            url: input.userPhotoDataUri,
-            contentType: userPhotoContentType,
-          },
-        },
-        {
-          text: 'Person to dress (maintain their exact appearance, pose, and setting)',
-        },
-        {
-          media: {
-            url: input.outfitImageDataUri,
-            contentType: outfitContentType,
-          },
-        },
-        {
-          text: 'Clothing item to apply to the person above. Generate the image NOW showing the person wearing this clothing.',
-        },
+        { media: { url: input.userPhotoDataUri } },
+        { media: { url: input.outfitImageDataUri } },
       ],
       config: {
+        responseModalities: ['IMAGE'],
         temperature: 0.3,
         topK: 20,
         topP: 0.8,
       },
-      output: {
-        format: 'media',
-      },
     });
-    
+
     const imageDataUri = result.media?.url;
     
     if (!imageDataUri || !imageDataUri.startsWith('data:image/')) {
