@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Loader2, Wand2 } from "lucide-react";
 import {
   Select,
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "../ui/textarea";
 import { Skeleton } from "../ui/skeleton";
+import { useBusinessAssets } from "@/contexts/business-asset-context";
 
 export default function CatalogGenerator() {
   const [loading, setLoading] = useState(false);
@@ -30,21 +30,29 @@ export default function CatalogGenerator() {
   const [catalogStyle, setCatalogStyle] = useState("A clean, bright, and professional look for an e-commerce website. Use a plain light gray background.");
   const { toast } = useToast();
 
-  const mannequinImages = PlaceHolderImages.filter(p => p.id.startsWith('mannequin-'));
-  const productImages = PlaceHolderImages.filter(p => p.id.startsWith('product-'));
+  const { mannequinImages, productImages } = useBusinessAssets();
 
-  const [selectedMannequin, setSelectedMannequin] = useState(mannequinImages[0].imageUrl);
-  const [selectedProduct, setSelectedProduct] = useState(productImages[0].imageUrl);
+  const [selectedMannequin, setSelectedMannequin] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResultImage(null);
     try {
+      if (!selectedMannequin || !selectedProduct) {
+        toast({ variant: "destructive", title: "Missing assets", description: "Please select a mannequin and a product." });
+        return;
+      }
+      
       const response = await fetch('/api/business-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ catalogStyleDescription: catalogStyle }),
+        body: JSON.stringify({ 
+          catalogStyleDescription: catalogStyle,
+          mannequinImage: selectedMannequin, // Passing URL, should be converted to data URI if needed by API
+          productImage: selectedProduct,
+        }),
       });
       const result = await response.json();
       if (!response.ok || 'error' in result) {
@@ -72,23 +80,23 @@ export default function CatalogGenerator() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="font-medium">Mannequin</label>
-              <Select defaultValue={selectedMannequin} onValueChange={setSelectedMannequin}>
+              <Select value={selectedMannequin} onValueChange={setSelectedMannequin} disabled={mannequinImages.length === 0}>
                 <SelectTrigger><SelectValue placeholder="Select mannequin" /></SelectTrigger>
-                <SelectContent>{mannequinImages.map(img => <SelectItem key={img.id} value={img.imageUrl}>{img.description}</SelectItem>)}</SelectContent>
+                <SelectContent>{mannequinImages.map(img => <SelectItem key={img.id} value={img.url}>{img.fileName}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <label className="font-medium">Product</label>
-              <Select defaultValue={selectedProduct} onValueChange={setSelectedProduct}>
+              <Select value={selectedProduct} onValueChange={setSelectedProduct} disabled={productImages.length === 0}>
                 <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
-                <SelectContent>{productImages.map(img => <SelectItem key={img.id} value={img.imageUrl}>{img.description}</SelectItem>)}</SelectContent>
+                <SelectContent>{productImages.map(img => <SelectItem key={img.id} value={img.url}>{img.fileName}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
               <label className="font-medium">Catalog Style Description</label>
               <Textarea value={catalogStyle} onChange={e => setCatalogStyle(e.target.value)} placeholder="e.g., Dark, moody, high-fashion editorial..." rows={3} disabled={loading} />
             </div>
-            <Button type="submit" disabled={loading} className="w-full">
+            <Button type="submit" disabled={loading || !selectedMannequin || !selectedProduct} className="w-full">
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
               Generate Catalog Image
             </Button>

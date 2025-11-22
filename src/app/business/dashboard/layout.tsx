@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { BusinessAssetProvider } from '@/contexts/business-asset-context';
 
 function BusinessUserMenu() {
     return (
@@ -76,41 +77,10 @@ export default function BusinessDashboardLayout({ children }: { children: React.
   const isActive = (path: string) => pathname === path;
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="border-b">
-          <div className="text-foreground p-2">
-            <Logo />
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isActive('/business/dashboard')} tooltip="Dashboard">
-                <Link href="/business/dashboard">
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="border-t">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Logout">
-                <Link href="/">
-                  <LogOut />
-                  <span>Logout</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset className="flex flex-col">
+    <BusinessAssetProvider>
+      <div className="flex flex-col min-h-dvh">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 shadow-sm">
-          <SidebarTrigger className="hover:bg-accent" />
+          <Logo />
           <BusinessUserMenu />
         </header>
         <main className="flex-1 p-6 md:p-8 lg:p-10 bg-gradient-to-br from-background to-muted/20 overflow-auto">
@@ -118,7 +88,7 @@ export default function BusinessDashboardLayout({ children }: { children: React.
             {children}
           </div>
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </BusinessAssetProvider>
   );
 }
