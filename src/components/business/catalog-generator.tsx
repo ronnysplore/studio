@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { getBusinessCatalog } from "@/app/actions";
+// Use API route to generate business catalog instead of Server Action
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,17 +40,23 @@ export default function CatalogGenerator() {
     e.preventDefault();
     setLoading(true);
     setResultImage(null);
-    const result = await getBusinessCatalog({ catalogStyleDescription: catalogStyle });
-    if ("error" in result) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: result.error,
+    try {
+      const response = await fetch('/api/business-catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ catalogStyleDescription: catalogStyle }),
       });
-    } else {
-      setResultImage(result.catalogImage);
+      const result = await response.json();
+      if (!response.ok || 'error' in result) {
+        toast({ variant: 'destructive', title: 'Error', description: result?.error || 'Failed to generate catalog' });
+      } else {
+        setResultImage(result.catalogImage || result.catalogImageDataUri || null);
+      }
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate catalog' });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

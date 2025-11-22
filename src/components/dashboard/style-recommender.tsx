@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getOutfitRecommendations } from "@/app/actions";
+// Use the outfit recommendations API instead of Server Actions to avoid origin checks
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,17 +41,23 @@ export default function StyleRecommender() {
     e.preventDefault();
     setLoading(true);
     setRecommendations([]);
-    const result = await getOutfitRecommendations({ stylePreferences });
-    if ("error" in result) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: result.error,
+    try {
+      const response = await fetch('/api/outfit-recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stylePreferences }),
       });
-    } else {
-      setRecommendations(result);
+      const result = await response.json();
+      if (!response.ok || 'error' in result) {
+        toast({ variant: 'destructive', title: 'Error', description: result?.error || 'Failed to generate recommendations' });
+      } else {
+        setRecommendations(result);
+      }
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate recommendations' });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

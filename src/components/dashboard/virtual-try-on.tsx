@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { getVirtualTryOn } from "@/app/actions";
+// Use API route instead of Next.js Server Action to avoid forwarded host/origin mismatch
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -50,32 +50,33 @@ export default function VirtualTryOn() {
 
     try {
       // Find the selected images to get their dataUri
-      const userPhoto = userPhotos.find(p => p.url === selectedUserPhoto);
-      const wardrobeItem = wardrobeItems.find(w => w.url === selectedWardrobeItem);
+      const userPhoto = userPhotos.find((p) => p.url === selectedUserPhoto);
+      const wardrobeItem = wardrobeItems.find((w) => w.url === selectedWardrobeItem);
 
       if (!userPhoto || !wardrobeItem) {
         throw new Error("Selected images not found");
       }
 
-      const result = await getVirtualTryOn({
-        userPhotoDataUri: userPhoto.dataUri,
-        outfitImageDataUri: wardrobeItem.dataUri,
+      const response = await fetch("/api/virtual-try-on", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userPhotoDataUri: userPhoto.dataUri,
+          outfitImageDataUri: wardrobeItem.dataUri,
+        }),
       });
 
-      if ("error" in result) {
+      const result = await response.json();
+
+      if (!response.ok || "error" in result) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: result.error,
+          description: result?.error || "Failed to generate try-on",
         });
       } else {
-        setResultImage(result.tryOnImageDataUri);
-        
-        // TODO: Save to Drive when network issues are resolved
-        toast({
-          title: "Success!",
-          description: "Try-on generated successfully",
-        });
+        setResultImage(result.tryOnImageDataUri || result.tryOnImage || null);
+        toast({ title: "Success!", description: "Try-on generated successfully" });
         
         /* Temporarily disabled - Drive save
         try {

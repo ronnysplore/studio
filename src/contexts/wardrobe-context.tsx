@@ -30,14 +30,23 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
   const [wardrobeItems, setWardrobeItems] = useState<UploadedImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load from localStorage on mount (fallback)
+  // Load from localStorage on mount (fallback) — only metadata (no large data URIs)
   useEffect(() => {
     const savedUserPhotos = localStorage.getItem("userPhotos");
     const savedWardrobeItems = localStorage.getItem("wardrobeItems");
 
     if (savedUserPhotos) {
       try {
-        setUserPhotos(JSON.parse(savedUserPhotos));
+        const parsed = JSON.parse(savedUserPhotos) as Array<any>;
+        setUserPhotos(
+          parsed.map((p) => ({
+            id: p.id,
+            url: p.url,
+            fileName: p.fileName,
+            dataUri: "",
+            driveFileId: p.driveFileId,
+          }))
+        );
       } catch (e) {
         console.error("Failed to load user photos", e);
       }
@@ -45,7 +54,16 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
 
     if (savedWardrobeItems) {
       try {
-        setWardrobeItems(JSON.parse(savedWardrobeItems));
+        const parsed = JSON.parse(savedWardrobeItems) as Array<any>;
+        setWardrobeItems(
+          parsed.map((p) => ({
+            id: p.id,
+            url: p.url,
+            fileName: p.fileName,
+            dataUri: "",
+            driveFileId: p.driveFileId,
+          }))
+        );
       } catch (e) {
         console.error("Failed to load wardrobe items", e);
       }
@@ -61,13 +79,33 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
     // }
   }, [session]);
 
-  // Save to localStorage whenever images change (fallback)
+  // Save metadata to localStorage whenever images change (avoid storing dataUri blobs)
   useEffect(() => {
-    localStorage.setItem("userPhotos", JSON.stringify(userPhotos));
+    try {
+      const persistable = userPhotos.map(({ id, url, fileName, driveFileId }) => ({
+        id,
+        url,
+        fileName,
+        driveFileId,
+      }));
+      localStorage.setItem("userPhotos", JSON.stringify(persistable));
+    } catch (e) {
+      console.error("Failed to persist user photos metadata", e);
+    }
   }, [userPhotos]);
 
   useEffect(() => {
-    localStorage.setItem("wardrobeItems", JSON.stringify(wardrobeItems));
+    try {
+      const persistable = wardrobeItems.map(({ id, url, fileName, driveFileId }) => ({
+        id,
+        url,
+        fileName,
+        driveFileId,
+      }));
+      localStorage.setItem("wardrobeItems", JSON.stringify(persistable));
+    } catch (e) {
+      console.error("Failed to persist wardrobe items metadata", e);
+    }
   }, [wardrobeItems]);
 
   const fileToDataUri = (file: File): Promise<string> => {
@@ -79,38 +117,30 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Upload to local filesystem via the new /api/uploads route (fallback for dev)
   const uploadToDrive = async (
     fileName: string,
     fileData: string,
     folderType: "userPhotos" | "wardrobeItems"
-  ): Promise<string | undefined> => {
-    // Temporarily disabled due to network timeout issues
-    // TODO: Re-enable when network connectivity to googleapis.com is fixed
-    return undefined;
-    
-    /* Original implementation - commented out
-    if (!session?.accessToken) {
-      return undefined;
-    }
-
+  ): Promise<{ id?: string; url?: string } | undefined> => {
     try {
-      const response = await fetch("/api/drive", {
+      const response = await fetch("/api/uploads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fileName, fileData, folderType }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload to Drive");
+        console.error("Upload to filesystem failed", await response.text());
+        return undefined;
       }
 
       const result = await response.json();
-      return result.id;
+      return { id: result.id, url: result.url };
     } catch (error) {
-      console.error("Error uploading to Drive:", error);
+      console.error("Error uploading to filesystem:", error);
       return undefined;
     }
-    */
   };
 
   const loadFromDrive = async () => {
@@ -163,13 +193,15 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
     const newImages = await Promise.all(
       Array.from(files).map(async (file) => {
         const dataUri = await fileToDataUri(file);
-        const driveFileId = await uploadToDrive(file.name, dataUri, "userPhotos");
+        const uploadResult = await uploadToDrive(file.name, dataUri, "userPhotos");
+        const id = uploadResult?.id || Math.random().toString(36).substr(2, 9);
+        const url = uploadResult?.url || dataUri;
         return {
-          id: driveFileId || Math.random().toString(36).substr(2, 9),
-          url: dataUri, // Use dataUri as url for persistence
+          id,
+          url,
           fileName: file.name,
-          dataUri,
-          driveFileId,
+          dataUri: "",
+          driveFileId: uploadResult?.id,
         };
       })
     );
@@ -180,13 +212,15 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
     const newImages = await Promise.all(
       Array.from(files).map(async (file) => {
         const dataUri = await fileToDataUri(file);
-        const driveFileId = await uploadToDrive(file.name, dataUri, "wardrobeItems");
+        const uploadResult = await uploadToDrive(file.name, dataUri, "wardrobeItems");
+        const id = uploadResult?.id || Math.random().toString(36).substr(2, 9);
+        const url = uploadResult?.url || dataUri;
         return {
-          id: driveFileId || Math.random().toString(36).substr(2, 9),
-          url: dataUri, // Use dataUri as url for persistence
+          id,
+          url,
           fileName: file.name,
-          dataUri,
-          driveFileId,
+          dataUri: "",
+          driveFileId: uploadResult?.id,
         };
       })
     );
