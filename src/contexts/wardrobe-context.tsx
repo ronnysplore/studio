@@ -19,6 +19,7 @@ type WardrobeContextType = {
   removeUserPhoto: (id: string) => void;
   removeWardrobeItem: (id: string) => void;
   loadFromDrive: () => Promise<void>;
+  getImageDataUri: (url: string) => Promise<string>;
   isLoading: boolean;
 };
 
@@ -237,6 +238,23 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
     // TODO: Also delete from Google Drive
   };
 
+  // Helper to fetch an image URL and convert it to a data URI
+  const getImageDataUri = async (url: string): Promise<string> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Failed to fetch image as data URI:", error);
+      throw error;
+    }
+  };
+
   return (
     <WardrobeContext.Provider
       value={{
@@ -247,6 +265,7 @@ export function WardrobeProvider({ children }: { children: React.ReactNode }) {
         removeUserPhoto,
         removeWardrobeItem,
         loadFromDrive,
+        getImageDataUri,
         isLoading,
       }}
     >

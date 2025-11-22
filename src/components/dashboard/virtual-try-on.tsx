@@ -26,7 +26,7 @@ import { useWardrobe } from "@/contexts/wardrobe-context";
 export default function VirtualTryOn() {
   const [loading, setLoading] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const { userPhotos, wardrobeItems, addUserPhotos, addWardrobeItems } = useWardrobe();
+  const { userPhotos, wardrobeItems, addUserPhotos, addWardrobeItems, getImageDataUri } = useWardrobe();
   const { toast } = useToast();
 
   const [selectedUserPhoto, setSelectedUserPhoto] = useState<string>("");
@@ -57,12 +57,16 @@ export default function VirtualTryOn() {
         throw new Error("Selected images not found");
       }
 
+      // Fetch actual data URIs from the image URLs (since we don't store them in localStorage)
+      const userPhotoDataUri = userPhoto.dataUri || await getImageDataUri(userPhoto.url);
+      const outfitImageDataUri = wardrobeItem.dataUri || await getImageDataUri(wardrobeItem.url);
+
       const response = await fetch("/api/virtual-try-on", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userPhotoDataUri: userPhoto.dataUri,
-          outfitImageDataUri: wardrobeItem.dataUri,
+          userPhotoDataUri,
+          outfitImageDataUri,
         }),
       });
 
