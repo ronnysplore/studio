@@ -16,10 +16,10 @@ const GenerateVirtualTryOnImagesInputSchema = z.object({
     .describe(
       "A photo of the user, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  outfitImageDataUri: z
-    .string()
+  outfitImageDataUris: z
+    .array(z.string())
     .describe(
-      "A photo of the outfit, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "An array of photos of the outfit items, as data URIs that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type GenerateVirtualTryOnImagesInput = z.infer<typeof GenerateVirtualTryOnImagesInputSchema>;
@@ -44,24 +44,26 @@ const generateVirtualTryOnImagesFlow = ai.defineFlow(
     outputSchema: GenerateVirtualTryOnImagesOutputSchema,
   },
   async input => {
+    const mediaParts = input.outfitImageDataUris.map(uri => ({ media: { url: uri } }));
+
     // Use gemini-2.5-flash-image-preview (nano-banana) for virtual try-on image generation
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: [
         {
-          text: `You are a professional virtual fashion try-on AI. Your task is to generate a photorealistic image of the person from the first image wearing the clothing from the second image.
+          text: `You are a professional virtual fashion try-on AI. Your task is to generate a photorealistic image of the person from the first image wearing the clothing items from the following images. If multiple items are provided, layer them realistically (e.g., shirt under a jacket).
 
 CRITICAL INSTRUCTIONS:
 - Generate ONLY an image of the person wearing the clothing.
 - DO NOT generate abstract images, landscapes, or unrelated content.
-- The output MUST show the person from the first image wearing the clothing from the second image.
+- The output MUST show the person from the first image wearing the clothing from the subsequent images.
 - Preserve the person's facial features, body proportions, and pose exactly.
-- Apply the clothing item naturally with realistic fit, wrinkles, and fabric behavior.
+- Apply the clothing items naturally with realistic fit, wrinkles, and fabric behavior.
 - Match the original photo's lighting, background, and photography style.
 - Ensure seamless integration between the person and the clothing.`,
         },
         { media: { url: input.userPhotoDataUri } },
-        { media: { url: input.outfitImageDataUri } },
+        ...mediaParts,
       ],
       config: {
         responseModalities: ['IMAGE'],
