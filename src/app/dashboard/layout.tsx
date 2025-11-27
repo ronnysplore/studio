@@ -7,6 +7,8 @@ import { useSession, signOut } from 'next-auth/react';
 import {
   LogOut,
   User,
+  LayoutGrid,
+  Building,
 } from 'lucide-react';
 
 import Logo from '@/components/common/logo';
@@ -62,6 +64,18 @@ function UserMenu() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">
+                        <LayoutGrid className="mr-2 h-4 w-4" />
+                        <span>Personal Dashboard</span>
+                    </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/business/dashboard">
+                        <Building className="mr-2 h-4 w-4" />
+                        <span>Business Dashboard</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                     <Link href="/dashboard/history">Outfit History</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -81,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Logo />
         <UserMenu />
       </header>
-      <main className="flex-1 p-6 md:p-8 lg:p-10">
+      <main className="flex-1 p-6 md:p-8 lg:p-10 bg-gradient-to-br from-background to-muted/20 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <WardrobeProvider>
             {children}
