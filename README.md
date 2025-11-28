@@ -10,7 +10,7 @@ StyleAI Studio is a cutting-edge web application that leverages generative AI to
 ## 🎬 Project Showcase
 
 - **[View the Project Presentation](https://1drv.ms/p/c/c54129bf85dd293c/EVvCvk-yyn5FjJ3mpP6wXFUBGL5iQ_wB8T4sif37iS6hvA?e=FKJCXO)**: An in-depth look at the project's vision, architecture, and features.
-- **Demo Video**: See the application in action [on the live site](#showcase) or check the `/public/uploads/demovideo/demo.mp4` file in this repository.
+- **Demo Video**: See the application in action in the `/public/uploads/demovideo/demo.mp4` file in this repository.
 
 
 ---
