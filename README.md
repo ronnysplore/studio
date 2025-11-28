@@ -7,6 +7,14 @@ StyleAI Studio is a cutting-edge web application that leverages generative AI to
 
 ---
 
+## 🎬 Project Showcase
+
+- **[View the Project Presentation](https://1drv.ms/p/c/c54129bf85dd293c/EVvCvk-yyn5FjJ3mpP6wXFUBGL5iQ_wB8T4sif37iS6hvA?e=FKJCXO)**: An in-depth look at the project's vision, architecture, and features.
+- **Demo Video**: See the application in action [on the live site](#showcase) or check the `/public/uploads/demovideo/demo.mp4` file in this repository.
+
+
+---
+
 ## ✨ Core Features
 
 ### For Personal Users
@@ -24,7 +32,7 @@ StyleAI Studio is a cutting-edge web application that leverages generative AI to
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/)
-- **Generative AI:** [Google Gemini](https://deepmind.google/technologies/gemini/) via [Genkit](https://firebase.google.com/docs/genkit)
+- **Generative AI:** [Google Gemini](https://deepmind.google.com/technologies/gemini/) via [Genkit](https://firebase.google.com/docs/genkit)
 - **Authentication:** [NextAuth.js](https://next-auth.js.org/) with Google Provider
 - **Database:** [Firestore](https://firebase.google.com/docs/firestore) for user data (e.g., generation limits)
 - **File Storage:** [Google Drive](https://www.google.com/drive/) for all user-uploaded images and AI-generated outputs.
