@@ -9,7 +9,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Wand2, CheckCircle, User, Shirt, AlertCircle, Info } from "lucide-react";
+import { Loader2, Wand2, CheckCircle, User, Shirt, AlertCircle, Info, Download } from "lucide-react";
 import { useWardrobe } from "@/contexts/wardrobe-context";
 import { useSession } from "next-auth/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,23 +41,31 @@ export default function VirtualTryOn() {
   const [selectedWardrobeItems, setSelectedWardrobeItems] = useState<string[]>([]);
   
   const [generationCount, setGenerationCount] = useState(0);
-  const [lastGenerationDate, setLastGenerationDate] = useState("");
+  const [isLimitLoading, setIsLimitLoading] = useState(true);
+
+  const fetchGenerationCount = async () => {
+    if (!session) return;
+    setIsLimitLoading(true);
+    try {
+      const response = await fetch('/api/user/limit');
+      if (response.ok) {
+        const data = await response.json();
+        setGenerationCount(data.count);
+      } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch daily generation limit.' });
+      }
+    } catch (error) {
+      console.error("Could not fetch daily generation limit", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch daily generation limit.' });
+    } finally {
+      setIsLimitLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const storedCount = localStorage.getItem('generationCount');
-    const storedDate = localStorage.getItem('lastGenerationDate');
-    const today = new Date().toISOString().split('T')[0];
+    fetchGenerationCount();
+  }, [session]);
 
-    if (storedDate === today) {
-      setGenerationCount(Number(storedCount) || 0);
-    } else {
-      // It's a new day, reset the counter
-      localStorage.setItem('generationCount', '0');
-      localStorage.setItem('lastGenerationDate', today);
-      setGenerationCount(0);
-    }
-    setLastGenerationDate(today);
-  }, []);
 
   const canGenerate = generationCount < DAILY_LIMIT;
 
@@ -73,6 +81,16 @@ export default function VirtualTryOn() {
       }
       return () => clearInterval(interval);
   }, [loading]);
+
+  const handleDownload = () => {
+    if (!resultImage) return;
+    const link = document.createElement("a");
+    link.href = resultImage;
+    link.download = `style-ai-try-on-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleWardrobeSelect = (itemUrl: string) => {
     setSelectedWardrobeItems(prev => 
@@ -135,14 +153,14 @@ export default function VirtualTryOn() {
       if (!response.ok || "error" in result) {
         throw new Error(result?.error || "Failed to generate try-on");
       }
+      
+      // Increment count on server
+      await fetch('/api/user/limit', { method: 'POST' });
+      setGenerationCount(prev => prev + 1);
+
 
       const generatedImage = result.tryOnImageDataUri || null;
       setResultImage(generatedImage);
-
-      const newCount = generationCount + 1;
-      setGenerationCount(newCount);
-      localStorage.setItem('generationCount', String(newCount));
-      localStorage.setItem('lastGenerationDate', lastGenerationDate);
 
       if (generatedImage && session?.accessToken) {
         await fetch('/api/save-outfit', {
@@ -243,13 +261,17 @@ export default function VirtualTryOn() {
                   <Info className="h-4 w-4" />
                   <AlertTitle>Daily Limit</AlertTitle>
                   <AlertDescription>
-                    You can generate {DAILY_LIMIT - generationCount} more image{DAILY_LIMIT - generationCount !== 1 ? 's' : ''} today. Your limit will reset tomorrow.
+                    {isLimitLoading ? (
+                      'Loading your limit...'
+                    ) : (
+                      `You can generate ${Math.max(0, DAILY_LIMIT - generationCount)} more image${DAILY_LIMIT - generationCount !== 1 ? 's' : ''} today. Your limit will reset tomorrow.`
+                    )}
                   </AlertDescription>
                 </Alert>
 
                 <Button 
                     onClick={handleSubmit} 
-                    disabled={loading || !selectedUserPhoto || selectedWardrobeItems.length === 0 || !canGenerate} 
+                    disabled={loading || !selectedUserPhoto || selectedWardrobeItems.length === 0 || !canGenerate || isLimitLoading} 
                     className="w-full h-14 text-lg bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center gap-3"
                 >
                     {loading ? 'Generating...' : 'Generate Try-On Image'}
@@ -274,9 +296,17 @@ export default function VirtualTryOn() {
                     </div>
                     )}
                 </div>
+                {resultImage && !loading && (
+                  <Button onClick={handleDownload} className="w-full" variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Image
+                  </Button>
+                )}
             </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+
+    

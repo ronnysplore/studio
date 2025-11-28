@@ -1,3 +1,4 @@
+
 import { google } from "googleapis";
 
 const FOLDER_NAME = "StyleAI";
@@ -18,28 +19,38 @@ export class GoogleDriveService {
   }
 
   /**
-   * Get or create the main StyleAI folder
+   * Get or create a folder.
    */
   private async getOrCreateFolder(
     folderName: string,
     parentId?: string
   ): Promise<string> {
-    // Search for existing folder
-    const query = parentId
-      ? `name='${folderName}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
-      : `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-
-    const response = await this.drive.files.list({
-      q: query,
-      fields: "files(id, name)",
-      spaces: "drive",
-    });
-
-    if (response.data.files && response.data.files.length > 0) {
-      return response.data.files[0].id!;
+    // Build the query to search for the folder
+    let query = `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    if (parentId) {
+      query += ` and '${parentId}' in parents`;
+    } else {
+      // If no parent is specified, search in the root
+      query += ` and 'root' in parents`;
     }
 
-    // Create folder if it doesn't exist
+    try {
+      const response = await this.drive.files.list({
+        q: query,
+        fields: "files(id, name)",
+        spaces: "drive",
+      });
+
+      if (response.data.files && response.data.files.length > 0) {
+        // Folder exists, return its ID
+        return response.data.files[0].id!;
+      }
+    } catch (error) {
+       console.error(`Error searching for folder "${folderName}":`, error);
+       throw error;
+    }
+    
+    // Folder does not exist, create it
     const fileMetadata: any = {
       name: folderName,
       mimeType: "application/vnd.google-apps.folder",
@@ -49,16 +60,20 @@ export class GoogleDriveService {
       fileMetadata.parents = [parentId];
     }
 
-    const folder = await this.drive.files.create({
-      requestBody: fileMetadata,
-      fields: "id",
-    });
-
-    return folder.data.id!;
+    try {
+        const folder = await this.drive.files.create({
+            requestBody: fileMetadata,
+            fields: "id",
+        });
+        return folder.data.id!;
+    } catch (error) {
+        console.error(`Error creating folder "${folderName}":`, error);
+        throw error;
+    }
   }
 
   /**
-   * Initialize folder structure: StyleAI/User Photos, StyleAI/Wardrobe Items, StyleAI/Generated Outfits
+   * Initialize folder structure: StyleAI/User Photos, StyleAI/Wardrobe Items, etc.
    */
   async initializeFolders() {
     const mainFolderId = await this.getOrCreateFolder(FOLDER_NAME);
@@ -197,3 +212,5 @@ export class GoogleDriveService {
     });
   }
 }
+
+    
