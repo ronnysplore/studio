@@ -8,7 +8,6 @@ import {
   LogOut,
   User,
   LayoutGrid,
-  Building,
   Bot,
   Scan,
   Shirt,
@@ -100,6 +99,7 @@ const personalNavLinks = [
 
 const businessNavLinks = [
     { href: "/business/dashboard", label: "Catalog Generator", icon: Palette },
+    { href: "/dashboard/wardrobe", label: "Business Assets", icon: Shirt },
 ];
 
 
