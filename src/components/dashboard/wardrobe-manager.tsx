@@ -68,7 +68,7 @@ export default function WardrobeManager() {
           <CardHeader className="flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-muted/50 to-transparent border-b p-4 sm:p-6">
             <div>
               <CardTitle className="text-xl">{category.title}</CardTitle>
-              <CardDescription className="text-base mt-1">{category.description}</CardDescription>
+              <CardDescription className="text-sm mt-1">{category.description}</CardDescription>
             </div>
             <Button 
               className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 w-full sm:w-auto"

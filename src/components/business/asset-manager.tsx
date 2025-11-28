@@ -68,7 +68,7 @@ export default function AssetManager() {
           <CardHeader className="flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="text-xl">{category.title}</CardTitle>
-              <CardDescription className="text-base mt-1">{category.description}</CardDescription>
+              <CardDescription className="text-sm mt-1">{category.description}</CardDescription>
             </div>
             <Button onClick={() => document.getElementById(`upload-${category.title}`)?.click()} className="w-full sm:w-auto">
               <Upload className="mr-2 h-4 w-4" />
