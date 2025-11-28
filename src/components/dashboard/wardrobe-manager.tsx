@@ -65,13 +65,13 @@ export default function WardrobeManager() {
     <div className="space-y-8">
       {categories.map((category) => (
         <Card key={category.title} className="border-2 transition-all shadow-lg">
-          <CardHeader className="flex-row items-center justify-between bg-gradient-to-r from-muted/50 to-transparent border-b">
+          <CardHeader className="flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-gradient-to-r from-muted/50 to-transparent border-b p-4 sm:p-6">
             <div>
               <CardTitle className="text-xl">{category.title}</CardTitle>
               <CardDescription className="text-base mt-1">{category.description}</CardDescription>
             </div>
             <Button 
-              className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+              className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 w-full sm:w-auto"
               onClick={() => document.getElementById(`upload-${category.title}`)?.click()}
             >
               <Upload className="mr-2 h-4 w-4" />
