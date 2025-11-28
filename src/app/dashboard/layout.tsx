@@ -95,7 +95,6 @@ function UserMenu() {
 
 const personalNavLinks = [
     { href: "/dashboard", label: "Virtual Try-On", icon: Scan },
-    { href: "/dashboard/color-palette", label: "Color Palette", icon: Sparkles },
     { href: "/dashboard/wardrobe", label: "My Wardrobe", icon: Shirt },
 ];
 

@@ -2,10 +2,6 @@
 'use server';
 
 import type {
-  AnalyzeColorPaletteInput,
-  AnalyzeColorPaletteOutput,
-} from '@/ai/schemas';
-import type {
   GenerateVirtualTryOnImagesInput,
   GenerateVirtualTryOnImagesOutput,
 } from '@/ai/flows/generate-virtual-try-on-images';
@@ -13,19 +9,6 @@ import type {
   GenerateBusinessCatalogInput,
   GenerateBusinessCatalogOutput,
 } from '@/ai/flows/generate-business-catalogs';
-
-export async function getColorPalette(
-  input: AnalyzeColorPaletteInput
-): Promise<AnalyzeColorPaletteOutput | { error: string }> {
-  try {
-    const { analyzeColorPalette } = await import('@/ai/flows/analyze-color-palette');
-    const result = await analyzeColorPalette(input);
-    return result;
-  } catch (e: any) {
-    console.error('Color palette analysis error:', e);
-    return { error: e.message || 'Failed to analyze color palette.' };
-  }
-}
 
 export async function getVirtualTryOn(
   input: GenerateVirtualTryOnImagesInput
