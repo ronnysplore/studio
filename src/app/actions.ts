@@ -2,9 +2,9 @@
 'use server';
 
 import type {
-  GenerateOutfitRecommendationsInput,
-  GenerateOutfitRecommendationsOutput,
-} from '@/ai/flows/generate-outfit-recommendations';
+  AnalyzeColorPaletteInput,
+  AnalyzeColorPaletteOutput,
+} from '@/ai/flows/analyze-color-palette';
 import type {
   GenerateVirtualTryOnImagesInput,
   GenerateVirtualTryOnImagesOutput,
@@ -14,16 +14,16 @@ import type {
   GenerateBusinessCatalogOutput,
 } from '@/ai/flows/generate-business-catalogs';
 
-export async function getOutfitRecommendations(
-  input: GenerateOutfitRecommendationsInput
-): Promise<GenerateOutfitRecommendationsOutput | { error: string }> {
+export async function getColorPalette(
+  input: AnalyzeColorPaletteInput
+): Promise<AnalyzeColorPaletteOutput | { error: string }> {
   try {
-    const { generateOutfitRecommendations } = await import('@/ai/flows/generate-outfit-recommendations');
-    const result = await generateOutfitRecommendations(input);
+    const { analyzeColorPalette } = await import('@/ai/flows/analyze-color-palette');
+    const result = await analyzeColorPalette(input);
     return result;
   } catch (e: any) {
-    console.error('Outfit recommendations error:', e);
-    return { error: e.message || 'Failed to generate recommendations.' };
+    console.error('Color palette analysis error:', e);
+    return { error: e.message || 'Failed to analyze color palette.' };
   }
 }
 

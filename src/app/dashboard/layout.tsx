@@ -13,7 +13,8 @@ import {
   Scan,
   Shirt,
   Palette,
-  History
+  History,
+  Sparkles
 } from 'lucide-react';
 
 import Logo from '@/components/common/logo';
@@ -94,7 +95,7 @@ function UserMenu() {
 
 const personalNavLinks = [
     { href: "/dashboard", label: "Virtual Try-On", icon: Scan },
-    { href: "/dashboard/recommender", label: "Recommender", icon: Bot },
+    { href: "/dashboard/color-palette", label: "Color Palette", icon: Sparkles },
     { href: "/dashboard/wardrobe", label: "My Wardrobe", icon: Shirt },
 ];
 
