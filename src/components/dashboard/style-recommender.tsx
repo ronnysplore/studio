@@ -109,7 +109,7 @@ export default function StyleRecommender() {
             <AlertTitle className="font-semibold">Upload Your Photos First</AlertTitle>
             <AlertDescription>
               To get personalized recommendations, please upload your photos and wardrobe items in the{" "}
-              <Link href="#" onClick={(e) => {e.preventDefault(); document.querySelector('[data-value="wardrobe"]')?.dispatchEvent(new MouseEvent('click', {bubbles: true}));}} className="font-medium underline text-accent-foreground">
+              <Link href="/dashboard/wardrobe" className="font-medium underline text-accent-foreground">
                 My Wardrobe
               </Link>{" "}
               tab.

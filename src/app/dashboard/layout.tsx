@@ -12,7 +12,8 @@ import {
   Bot,
   Scan,
   Shirt,
-  Palette
+  Palette,
+  History
 } from 'lucide-react';
 
 import Logo from '@/components/common/logo';
@@ -77,7 +78,7 @@ function UserMenu() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link href="/dashboard/history">
-                        <User className="mr-2 h-4 w-4" />
+                        <History className="mr-2 h-4 w-4" />
                         <span>Outfit History</span>
                     </Link>
                 </DropdownMenuItem>
@@ -91,15 +92,23 @@ function UserMenu() {
     )
 }
 
-const navLinks = [
-    { href: "/business/dashboard", label: "Catalog Generator", icon: Palette },
+const personalNavLinks = [
     { href: "/dashboard", label: "Virtual Try-On", icon: Scan },
     { href: "/dashboard/recommender", label: "Recommender", icon: Bot },
     { href: "/dashboard/wardrobe", label: "My Wardrobe", icon: Shirt },
 ];
 
+const businessNavLinks = [
+    { href: "/business/dashboard", label: "Catalog Generator", icon: Palette },
+];
+
+
 function NavTabs() {
     const pathname = usePathname();
+    const isBusinessPath = pathname.startsWith('/business');
+    
+    const navLinks = isBusinessPath ? businessNavLinks : personalNavLinks;
+
     return (
         <div className="flex items-center space-x-1 bg-muted p-1 rounded-full">
             {navLinks.map(({ href, label, icon: Icon }) => (
