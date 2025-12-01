@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server';
+"use client";
+
+import { Button } from '@/components/ui/button';
 
 export default function OfflinePage() {
   return (
@@ -25,12 +27,12 @@ export default function OfflinePage() {
           No internet connection detected. Please check your connection and try again.
         </p>
         
-        <button
+        <Button
           onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="px-6 py-3"
         >
           Try Again
-        </button>
+        </Button>
       </div>
     </div>
   );
