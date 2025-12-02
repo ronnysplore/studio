@@ -21,6 +21,11 @@ type GeneratedOutfit = {
   createdTime: string;
 };
 
+// Function to get high-quality image URL from Google Drive file ID
+const getHighQualityImageUrl = (fileId: string) => {
+  return `https://drive.google.com/uc?export=view&id=${fileId}`;
+};
+
 type ViewMode = "grid" | "list";
 type SortBy = "newest" | "oldest" | "name";
 
@@ -238,10 +243,16 @@ export default function HistoryPage() {
                     <div className="relative aspect-[3/4] bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
                       {outfit.thumbnailLink ? (
                         <Image
-                          src={outfit.thumbnailLink}
+                          src={getHighQualityImageUrl(outfit.id)}
                           alt={outfit.name}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          placeholder="blur"
+                          blurDataURL={outfit.thumbnailLink}
+                          onError={(e) => {
+                            // Fallback to thumbnail if high-quality fails
+                            e.currentTarget.src = outfit.thumbnailLink;
+                          }}
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/10 to-accent/10">
@@ -292,10 +303,13 @@ export default function HistoryPage() {
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-muted/50 to-muted flex-shrink-0">
                           {outfit.thumbnailLink ? (
                             <Image
-                              src={outfit.thumbnailLink}
+                              src={getHighQualityImageUrl(outfit.id)}
                               alt={outfit.name}
                               fill
                               className="object-cover group-hover:scale-110 transition-transform duration-300"
+                              onError={(e) => {
+                                e.currentTarget.src = outfit.thumbnailLink;
+                              }}
                             />
                           ) : (
                             <div className="flex items-center justify-center h-full">
@@ -355,10 +369,15 @@ export default function HistoryPage() {
             <div className="relative mt-4 w-full aspect-[3/4] rounded-xl bg-muted overflow-hidden">
               {selectedOutfit?.thumbnailLink && (
                 <Image 
-                  src={selectedOutfit.thumbnailLink} 
+                  src={getHighQualityImageUrl(selectedOutfit.id)} 
                   alt={selectedOutfit.name} 
                   fill 
                   className="object-contain"
+                  priority
+                  onError={(e) => {
+                    e.currentTarget.src = selectedOutfit.thumbnailLink;
+                  }}
+                />
                 />
               )}
             </div>
