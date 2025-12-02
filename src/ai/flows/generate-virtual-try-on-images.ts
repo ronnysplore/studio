@@ -21,6 +21,12 @@ const GenerateVirtualTryOnImagesInputSchema = z.object({
     .describe(
       "An array of photos of the outfit items, as data URIs that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  customInstructions: z
+    .string()
+    .optional()
+    .describe(
+      "Optional custom styling instructions from the user, such as occasion, style preferences, or specific requirements."
+    ),
 });
 export type GenerateVirtualTryOnImagesInput = z.infer<typeof GenerateVirtualTryOnImagesInputSchema>;
 
@@ -58,6 +64,11 @@ const generateVirtualTryOnImagesFlow = ai.defineFlow(
   async input => {
     const mediaParts = input.outfitImageDataUris.map(uri => ({ media: { url: uri } }));
 
+    // Create custom instructions text if provided
+    const customInstructionsText = input.customInstructions 
+      ? `\n\nADDITIONAL STYLING REQUIREMENTS:\n- User Request: "${input.customInstructions}"\n- Ensure the final result aligns with this specific styling direction while maintaining all other protocols.\n- Adapt the clothing fit, styling, and presentation to match the requested aesthetic or occasion.`
+      : "";
+
     // Use gemini-2.5-flash-image-preview (nano-banana) for virtual try-on image generation
     const result = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview', // Ensure this model ID is correct for your provider
@@ -91,7 +102,7 @@ const generateVirtualTryOnImagesFlow = ai.defineFlow(
     - DO NOT crop the head or change the camera angle.
     
     FINAL OUTPUT REQUIREMENT:
-    Return ONLY the modified Anchor image with the Assets applied. The result must be indistinguishable from a real photograph taken in the original setting.`,
+    Return ONLY the modified Anchor image with the Assets applied. The result must be indistinguishable from a real photograph taken in the original setting.${customInstructionsText}`,
         },
         { media: { url: input.userPhotoDataUri } },
         ...mediaParts,

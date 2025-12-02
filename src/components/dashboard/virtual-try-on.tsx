@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Wand2, CheckCircle, User, Shirt, Download, Sparkles, Building2 } from "lucide-react";
+import { Loader2, Wand2, CheckCircle, User, Shirt, Download, Sparkles, Building2, MessageCircle } from "lucide-react";
 import { useWardrobe } from "@/contexts/wardrobe-context";
 import { useBusinessAssets } from "@/contexts/business-asset-context";
 import { useSession } from "next-auth/react";
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const generationSteps = [
     "Warming up the AI stylist...",
@@ -23,6 +25,19 @@ const generationSteps = [
     "Adjusting for a perfect fit...",
     "Rendering the final image...",
     "Almost there...",
+];
+
+const PRESET_INSTRUCTIONS = [
+  "Business Casual",
+  "Date Night",
+  "Workout",
+  "Travel",
+  "Party",
+  "Minimalist",
+  "Bohemian",
+  "Edgy",
+  "Classic",
+  "Seasonal"
 ];
 
 const DAILY_LIMIT = 3;
@@ -38,6 +53,7 @@ function PersonalTryOn() {
 
   const [selectedUserPhoto, setSelectedUserPhoto] = useState<string>("");
   const [selectedWardrobeItems, setSelectedWardrobeItems] = useState<string[]>([]);
+  const [customInstructions, setCustomInstructions] = useState<string>("");
   
   const [generationCount, setGenerationCount] = useState(0);
   const [isLimitLoading, setIsLimitLoading] = useState(true);
@@ -144,7 +160,11 @@ function PersonalTryOn() {
       const response = await fetch("/api/virtual-try-on", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userPhotoDataUri, outfitImageDataUris }),
+        body: JSON.stringify({ 
+          userPhotoDataUri, 
+          outfitImageDataUris,
+          customInstructions: customInstructions.trim() || undefined
+        }),
       });
 
       const result = await response.json();
@@ -293,6 +313,46 @@ function PersonalTryOn() {
           </div>
         </div>
 
+        {/* Custom Instructions */}
+        <div className="mt-6 space-y-3">
+          <Label htmlFor="personal-custom-instructions" className="text-sm font-medium flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Style Instructions (Optional)
+          </Label>
+          <Textarea
+            id="personal-custom-instructions"
+            placeholder="Describe the style, occasion, or preferences for this outfit... (e.g., 'Business meeting outfit', 'Casual weekend look', 'Earth tones only')"
+            value={customInstructions}
+            onChange={(e) => setCustomInstructions(e.target.value)}
+            className="resize-none"
+            rows={3}
+            maxLength={200}
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {PRESET_INSTRUCTIONS.map((preset) => (
+              <Button
+                key={preset}
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const newInstruction = customInstructions.trim() 
+                    ? `${customInstructions.trim()}, ${preset}`
+                    : preset;
+                  if (newInstruction.length <= 200) {
+                    setCustomInstructions(newInstruction);
+                  }
+                }}
+              >
+                {preset}
+              </Button>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground text-right">
+            {customInstructions.length}/200
+          </div>
+        </div>
+
         {/* Generate Button */}
         <Button 
           onClick={handleSubmit} 
@@ -374,6 +434,7 @@ function BusinessTryOn() {
 
   const [selectedMannequinPhoto, setSelectedMannequinPhoto] = useState<string>("");
   const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
+  const [customInstructions, setCustomInstructions] = useState<string>("");
   
   const [generationCount, setGenerationCount] = useState(0);
   const [isLimitLoading, setIsLimitLoading] = useState(true);
@@ -480,7 +541,11 @@ function BusinessTryOn() {
       const response = await fetch("/api/virtual-try-on", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userPhotoDataUri, outfitImageDataUris }),
+        body: JSON.stringify({ 
+          userPhotoDataUri, 
+          outfitImageDataUris,
+          customInstructions: customInstructions.trim() || undefined
+        }),
       });
 
       const result = await response.json();
@@ -626,6 +691,46 @@ function BusinessTryOn() {
               </div>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
+          </div>
+        </div>
+
+        {/* Custom Instructions */}
+        <div className="mt-6 space-y-3">
+          <Label htmlFor="business-custom-instructions" className="text-sm font-medium flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Style Instructions (Optional)
+          </Label>
+          <Textarea
+            id="business-custom-instructions"
+            placeholder="Describe the style, occasion, or preferences for this product showcase... (e.g., 'Professional presentation', 'Casual lifestyle', 'Sporty and active')"
+            value={customInstructions}
+            onChange={(e) => setCustomInstructions(e.target.value)}
+            className="resize-none"
+            rows={3}
+            maxLength={200}
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {PRESET_INSTRUCTIONS.map((preset) => (
+              <Button
+                key={preset}
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const newInstruction = customInstructions.trim() 
+                    ? `${customInstructions.trim()}, ${preset}`
+                    : preset;
+                  if (newInstruction.length <= 200) {
+                    setCustomInstructions(newInstruction);
+                  }
+                }}
+              >
+                {preset}
+              </Button>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground text-right">
+            {customInstructions.length}/200
           </div>
         </div>
 

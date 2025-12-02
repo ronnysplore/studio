@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const userEmail = session?.user?.email;
 
     const body = await request.json();
+    const { userPhotoDataUri, outfitImageDataUris, customInstructions } = body;
     
     // Ensure outfitImageDataUris is an array
     if (body.outfitImageDataUri && !Array.isArray(body.outfitImageDataUri)) {
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
       body.outfitImageDataUris = [];
     }
 
-    const result = await generateVirtualTryOnImages(body);
+    const result = await generateVirtualTryOnImages({
+      userPhotoDataUri,
+      outfitImageDataUris,
+      customInstructions
+    });
     
     // Record usage in Firestore if user is authenticated
     if (userEmail && result.usage) {
